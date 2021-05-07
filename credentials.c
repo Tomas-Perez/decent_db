@@ -14,6 +14,6 @@ credentials *create_credentials(int user_id, const char *username, const char *p
 
 void destroy_credentials(credentials *c) {
     free(c);
-    free(cred->username);
-    free(cred->password);
+    free(c->username);
+    free(c->password);
 }
