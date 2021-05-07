@@ -1,6 +1,6 @@
 #include <stdlib.h>
 
-#include "libraries/malloc_utils.h"
+#include "malloc_utils.h"
 #include "items.h"
 
 food *create_food(char *name, unsigned int price, unsigned int calories, float protein, float carbs, float fat) {

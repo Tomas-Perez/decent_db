@@ -1,8 +1,8 @@
 #ifndef PROGRAM_STATE_H
 #define PROGRAM_STATE_H
 
-#include "libraries/list.h"
-#include "credentials.h"
+#include "list.h"
+#include "../credentials.h"
 
 typedef struct user_state {
     int user_id_gen;
