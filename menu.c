@@ -32,7 +32,7 @@ int get_option() {
     char buffer[BUF_SIZE];
     int option;
     fgets(buffer, sizeof(buffer), stdin);
-    if (1 == sscanf(buffer, "%f", &option)) {
+    if (1 == sscanf(buffer, "%d", &option)) {
         return option;
     } else {
         return -1;
@@ -43,7 +43,7 @@ unsigned int get_uint() {
     char buffer[BUF_SIZE];
     unsigned int n;
     while (1) {
-        gets(buffer);
+        fgets(buffer, sizeof(buffer), stdin);
         if (1 == sscanf(buffer, "%u", &n)) {
             return n;
         }
@@ -56,7 +56,7 @@ float get_float() {
     float n;
     while (1) {
         fgets(buffer, sizeof(buffer), stdin);
-        if (1 == sscanf(buffer, "%d", &n)) {
+        if (1 == sscanf(buffer, "%f", &n)) {
             return n;
         }
         printf("Invalid value. Try again: ");
@@ -64,11 +64,18 @@ float get_float() {
 }
 
 int get_yes_no() {
-    char y_n = getchar();
-    if (y_n != 'y' && y_n != 'Y') {
-        return 0;
+    char buffer[BUF_SIZE];
+    char y_n;
+    fgets(buffer, sizeof(buffer), stdin);
+    if (1 == sscanf(buffer, "%c", &y_n)) {
+        if (y_n != 'y' && y_n != 'Y') {
+            return 0;
+        } else {
+            return 1;
+        }
     } else {
-        return 1;
+        fprintf(stderr, "Error reading from stdin\n");
+        exit(-1);
     }
 }
 
@@ -76,15 +83,17 @@ credentials *find_user_by_name(const char *username, list *creds) {
     node *curr = creds->head;
     while(curr) {
         credentials *cred = curr->data;
-        if (strcmp(cred->username, username)) {
+        if (!strcmp(cred->username, username)) {
             return cred;
         }
+        curr = curr->next;
     }
+    return NULL;
 }
 
 credentials *find_by_login(const char *username, const char *password, list *creds) {
     credentials *cred = find_user_by_name(username, creds);
-    if (!strcmp(cred->password, password)) return NULL;
+    if (!cred || strcmp(cred->password, password)) return NULL;
     return cred;
 }
 
@@ -94,9 +103,11 @@ credentials *login(list *creds) {
     credentials *user = NULL;
     do {
         printf("Username: ");
-        gets(username);
+        fgets(username, sizeof(username), stdin);
+        username[strcspn(username, "\n")] = '\0';
         printf("Password: ");
-        gets(password);
+        fgets(password, sizeof(password), stdin);
+        password[strcspn(password, "\n")] = '\0';
         user = find_by_login(username, password, creds);
         if (!user) {
             printf("Wrong username or password. Try again? (Y/n)\n");
@@ -120,19 +131,21 @@ void create_user(program_state *state) {
             }
         }
         printf("Username: ");
-        gets(username);
+        fgets(username, sizeof(username), stdin);
+        username[strcspn(username, "\n")] = '\0';
         prev_user = find_user_by_name(username, state->saved_credentials);
     } while (prev_user);
     
     printf("Password: ");
-    gets(password);
+    fgets(password, sizeof(password), stdin);
+    password[strcspn(password, "\n")] = '\0';
 
     credentials *cred = create_credentials(state->u_state.user_id_gen++, username, password);
     add_last(state->saved_credentials, cred);
 }
 
 void print_items(list *items) {
-    unsigned int idx;
+    unsigned int idx = 0;
     node *curr = items->head;
     while(curr) {
         int idx_str_len = snprintf(NULL, 0, "%d", idx);
@@ -236,7 +249,8 @@ void add_food_menu(list *items) {
     printf("ADDING FOOD\n");
     printf("Enter name: ");
     char name[ITEM_NAME_BUF_SIZE];
-    gets(name);
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
     printf("Enter price: ");
     unsigned int price = get_uint();
     printf("Enter calories: ");
@@ -248,13 +262,14 @@ void add_food_menu(list *items) {
     printf("Enter fat: ");
     float fat = get_float();
 
-    food *f = create_food(name, price, calories, protein, carbs, fat);
+    food *f = create_food(strdup(name), price, calories, protein, carbs, fat);
     printf("Created food:\n");
     print_food(f);
     printf("Add? (Y/n)\n");
 
     if (!get_yes_no()) {
         printf("Operation cancelled\n");
+        destroy_food(f);
         return;
     }
 
@@ -265,12 +280,14 @@ void add_kitchen_equipment_menu(list *items) {
     printf("ADDING KITCHEN EQUIPMENT\n");
     printf("Enter name: ");
     char name[ITEM_NAME_BUF_SIZE];
-    gets(name);
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
     printf("Enter price: ");
     unsigned int price = get_uint();
     material mat;
     int run = 0;
     do {
+        run = 0;
         printf("1. Wood\n");
         printf("2. Metal\n");
         printf("3. Plastic\n");
@@ -292,13 +309,14 @@ void add_kitchen_equipment_menu(list *items) {
         }
     } while (run);
 
-    kitchen_equipment *k = create_kitchen_equipment(name, price, mat);
+    kitchen_equipment *k = create_kitchen_equipment(strdup(name), price, mat);
     printf("Created kitchen equipment:\n");
     print_kitchen_equipment(k);
     printf("Add? (Y/n)\n");
 
     if (!get_yes_no()) {
         printf("Operation cancelled\n");
+        destroy_kitchen_equipment(k);
         return;
     }
 
@@ -309,19 +327,21 @@ void add_appliance_menu(list *items) {
     printf("ADDING APPLIANCE\n");
     printf("Enter name: ");
     char name[ITEM_NAME_BUF_SIZE];
-    gets(name);
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
     printf("Enter price: ");
     unsigned int price = get_uint();
     printf("Enter power consumption: ");
     unsigned int power_consumption_watts = get_uint();
 
-    appliance *a = create_appliance(name, price, power_consumption_watts);
+    appliance *a = create_appliance(strdup(name), price, power_consumption_watts);
     printf("Created appliance:\n");
     print_appliance(a);
     printf("Add? (Y/n)\n");
 
     if (!get_yes_no()) {
         printf("Operation cancelled\n");
+        destroy_appliance(a);
         return;
     }
     
@@ -332,17 +352,19 @@ void add_electronic_device_menu(list *items) {
     printf("ADDING ELECTRONIC DEVICE\n");
     printf("Enter name: ");
     char name[ITEM_NAME_BUF_SIZE];
-    gets(name);
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
     printf("Enter price: ");
     unsigned int price = get_uint();
 
-    electronic_device *e = create_electronic_device(name, price);
+    electronic_device *e = create_electronic_device(strdup(name), price);
     printf("Created electronic device:\n");
     print_electronic_device(e);
     printf("Add? (Y/n)\n");
 
     if (!get_yes_no()) {
         printf("Operation cancelled\n");
+        destroy_electronic_device(e);
         return;
     }
     
@@ -384,11 +406,12 @@ void remove_item_menu(list *items) {
     printf("REMOVING ITEM\n");
     printf("Enter name to search: ");
     char name[ITEM_NAME_BUF_SIZE];
-    gets(name);
+    fgets(name, sizeof(name), stdin);
+    name[strcspn(name, "\n")] = '\0';
 
-    int idx;
+    int idx = 0;
     node *curr = items->head;
-    item *i;
+    item *i = NULL;
     while (curr) {
         idx++;
         i = curr->data;
@@ -406,6 +429,7 @@ void remove_item_menu(list *items) {
         } else {
             void *it;
             remove_element(items, idx, &it);
+            destroy_item((item *) it);
             printf("Item removed\n");
         }
     } else {

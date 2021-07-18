@@ -1,0 +1,1 @@
+gcc -g ../list_extras.c sort_test.c sort_list.c list.c malloc_utils.c -o sort_test.out

@@ -1,3 +1,6 @@
+#ifndef CREDENTIALS_H
+#define CREDENTIALS_H
+
 typedef struct credentials {
     int user_id;
     char username[50];
@@ -6,3 +9,5 @@ typedef struct credentials {
 
 credentials *create_credentials(int user_id, const char *username, const char *password);
 void destroy_credentials(credentials *c);
+
+#endif
